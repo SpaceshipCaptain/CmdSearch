@@ -1,0 +1,33 @@
+.setting-container .setting-item-info {
+    display: none !important; /* Hide the info section entirely */
+}
+
+.name-input {
+    width: 100px !important;
+}
+
+.url-input {
+    flex: 1; /* Take up remaining space */
+    min-width: 200px !important;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 !important;
+}
+.settings-header a {
+    font-weight: bold;
+}
+.settings-header h1 {
+    margin: 0;
+    margin-bottom: 5px !important;
+}
+
+.settings-header svg {
+    height: 24px;
+    fill:currentColor;
+    margin-right: 5px;
+    vertical-align: middle;
+}
