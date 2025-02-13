@@ -5,7 +5,7 @@
 	"minAppVersion": "0.15.0",
 	"description": "Use the command pallete to search web. Add your own URLs.",
 	"author": "SpaceshipCaptain",
-	"authorUrl": "https://github.com/SpaceshipCaptain/CmdSearch",
+	"authorUrl": "https://github.com/SpaceshipCaptain",
 	"fundingUrl": "https://www.paypal.com/donate?hosted_button_id=44CMB9VHXFG68",
 	"isDesktopOnly": false
 }
