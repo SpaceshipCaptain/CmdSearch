@@ -25,14 +25,14 @@ export default class CmdSearch extends Plugin {
         }
     }
     // Keep track of registered command IDs
-    private registeredCommandIds: string[] = []; 
+    private registeredIds: string[] = []; 
 
     registerCommands() {
         // Unregister existing commands
-        this.registeredCommandIds.forEach(commandId => {
-            this.removeCommand(commandId);
+        this.registeredIds.forEach(Id => {
+            this.removeCommand(Id);
         });
-        this.registeredCommandIds = []; // Clear the list
+        this.registeredIds = []; // Clear the list
     
         // Register new commands:
         this.settings.links.forEach((link, index) => {
@@ -42,9 +42,9 @@ export default class CmdSearch extends Plugin {
                 }
                 return;
             }
-            const commandId = `open-url-${index}-${link.url}`;
+            const Id = `cmd-search-${index}`;
             this.addCommand({
-                id: commandId,
+                id: Id,
                 name: `${link.name}`,
                 callback: () => {
                     if (link.url.includes("${Q}")) {
@@ -55,7 +55,7 @@ export default class CmdSearch extends Plugin {
                 },
             });
             // Add the new ID to the list for unregistering
-            this.registeredCommandIds.push(commandId); 
+            this.registeredIds.push(Id); 
         });
     }
 
