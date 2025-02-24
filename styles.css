@@ -1,4 +1,4 @@
-.setting-container .setting-item-info {
+.cmd-search-settings-container .setting-container .setting-item-info {
     display: none !important; /* Hide the info section entirely */
 }
 
@@ -11,21 +11,12 @@
     min-width: 200px !important;
 }
 
-.settings-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 0 !important;
-}
-.settings-header a {
+.settings-footer a {
     font-weight: bold;
-}
-.settings-header h1 {
-    margin: 0;
-    margin-bottom: 5px !important;
+    margin-right: 25px !important;
 }
 
-.settings-header svg {
+.settings-footer svg {
     height: 24px;
     fill:currentColor;
     margin-right: 5px;
