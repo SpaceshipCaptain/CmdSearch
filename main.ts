@@ -1,4 +1,4 @@
-import {App, FuzzySuggestModal, Notice, Plugin, PluginSettingTab, Setting } from "obsidian";
+import {App, FuzzySuggestModal, Notice, Plugin, PluginSettingTab, Setting, WorkspaceLeaf } from "obsidian";
 
 export default class CmdSearch extends Plugin {
     settings: CmdSearchSettings;
@@ -15,7 +15,8 @@ export default class CmdSearch extends Plugin {
 
     async loadSettings() {
         const defaultSettings: CmdSearchSettings = {
-            links: DEFAULT_OPTIONS
+            links: DEFAULT_OPTIONS,
+            openSplitView: false
         };
     
         this.settings = Object.assign({}, defaultSettings, await this.loadData());
@@ -73,13 +74,22 @@ export default class CmdSearch extends Plugin {
         }
     }
 
+    private splitLeaf: WorkspaceLeaf | null = null;
+
     openLink(url: string, query: string) {
         try {
-            const finalUrl = url.includes("${Q}") 
+            const finalUrl = url.includes("${Q}")
                 ? url.replace("${Q}", encodeURIComponent(query))
                 : url;
-                
+            if (this.settings.openSplitView) {
+                if(!this.splitLeaf || this.splitLeaf?.getViewState().type === "empty") {
+                    this.splitLeaf = this.app.workspace.getLeaf('split', 'vertical')
+                } else {
+                    this.app.workspace.setActiveLeaf(this.splitLeaf)
+                }
+            }
             window.open(finalUrl, "_blank");
+
         } catch (error) {
             this.showError("Failed to open URL: " + error);
         }
@@ -122,6 +132,7 @@ interface SearchOption {
 
 interface CmdSearchSettings {
     links: SearchOption[];
+    openSplitView: boolean;
 }
 
 const DEFAULT_OPTIONS: SearchOption[] = [
@@ -156,6 +167,7 @@ class CmdSearchSettingTab extends PluginSettingTab {
     
         this.createAddNewCommandSetting(containerEl);
         this.createCommandInformationSetting(containerEl);
+        this.openSplitViewSetting(containerEl);
         this.createSettingsFooter(containerEl);
     
         containerEl.scrollTop = scrollPosition;
@@ -239,9 +251,8 @@ class CmdSearchSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Command information")
-            .setDesc(desc) // Set DOM DocumentFragment as description
+            .setDesc(desc)
             .addButton(btn => {
-                // Button feedback logic (Copied! and revert) - as before
                 const originalButtonText = "Copy ${Q}";
                 btn.setButtonText(originalButtonText)
                     .onClick(async () => {
@@ -252,6 +263,20 @@ class CmdSearchSettingTab extends PluginSettingTab {
                         }, 1500);
                     });
                 return btn;
+            });
+    }
+
+    private openSplitViewSetting(containerEl: HTMLElement): void {
+        new Setting(containerEl)
+            .setName("Open links to the right")
+            .setDesc("When enabled, links open in a split view beside the current window. Subsequent links will group.")
+            .addToggle(toggle => {
+                toggle.setValue(this.plugin.settings.openSplitView);
+                toggle.onChange(async (value) => {
+                    this.plugin.settings.openSplitView = value;
+                    await this.plugin.saveSettings();
+                });
+                return toggle;
             });
     }
 
