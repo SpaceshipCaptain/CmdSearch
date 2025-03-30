@@ -1,4 +1,4 @@
-import {App, FuzzySuggestModal, Notice, Plugin, PluginSettingTab, Setting, WorkspaceLeaf } from "obsidian";
+import {App, FuzzySuggestModal, MarkdownView, Notice, Plugin, PluginSettingTab, Setting, WorkspaceLeaf } from "obsidian";
 
 export default class CmdSearch extends Plugin {
     settings: CmdSearchSettings;
@@ -16,7 +16,8 @@ export default class CmdSearch extends Plugin {
     async loadSettings() {
         const defaultSettings: CmdSearchSettings = {
             links: DEFAULT_OPTIONS,
-            openSplitView: false
+            openSplitView: false,
+            searchSelectedText: false
         };
     
         this.settings = Object.assign({}, defaultSettings, await this.loadData());
@@ -48,8 +49,13 @@ export default class CmdSearch extends Plugin {
                 id: Id,
                 name: `${link.name}`,
                 callback: () => {
+                    let selectedText = this.getSelectedText();
                     if (link.url.includes("${Q}")) {
+                        if(this.settings.searchSelectedText && selectedText){
+                            this.openLink(link.url, selectedText);
+                        } else {
                         new QueryPrompt(this.app, this, link.url, link.name).open();
+                        }
                     } else {
                         this.openLink(link.url, "");
                     }
@@ -94,6 +100,15 @@ export default class CmdSearch extends Plugin {
             this.showError("Failed to open URL: " + error);
         }
     }
+
+    getSelectedText():string {
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView && activeView.editor) {
+            return activeView.editor.getSelection();
+        }else {
+            return "";
+        }
+    }
 }
 
 // used fuzzy to keep the command palette feel while searching
@@ -133,6 +148,7 @@ interface SearchOption {
 interface CmdSearchSettings {
     links: SearchOption[];
     openSplitView: boolean;
+    searchSelectedText: boolean;
 }
 
 const DEFAULT_OPTIONS: SearchOption[] = [
@@ -168,6 +184,7 @@ class CmdSearchSettingTab extends PluginSettingTab {
         this.createAddNewCommandSetting(containerEl);
         this.createCommandInformationSetting(containerEl);
         this.openSplitViewSetting(containerEl);
+        this.searchSelectedText(containerEl);
         this.createSettingsFooter(containerEl);
     
         containerEl.scrollTop = scrollPosition;
@@ -269,11 +286,25 @@ class CmdSearchSettingTab extends PluginSettingTab {
     private openSplitViewSetting(containerEl: HTMLElement): void {
         new Setting(containerEl)
             .setName("Open links to the right")
-            .setDesc("When enabled, links open in a split view beside the current window. Subsequent links will group.")
+            .setDesc("Links open in a split view beside the current window. Subsequent links will group.")
             .addToggle(toggle => {
                 toggle.setValue(this.plugin.settings.openSplitView);
                 toggle.onChange(async (value) => {
                     this.plugin.settings.openSplitView = value;
+                    await this.plugin.saveSettings();
+                });
+                return toggle;
+            });
+    }
+
+    private searchSelectedText(containerEl: HTMLElement): void {
+        new Setting(containerEl)
+            .setName("Search selected text")
+            .setDesc("If you have text selected when executing a search command, it will use selection as the search query.")
+            .addToggle(toggle => {
+                toggle.setValue(this.plugin.settings.searchSelectedText);
+                toggle.onChange(async (value) => {
+                    this.plugin.settings.searchSelectedText = value;
                     await this.plugin.saveSettings();
                 });
                 return toggle;

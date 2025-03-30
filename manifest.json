@@ -1,7 +1,7 @@
 {
 	"id": "cmd-search",
 	"name": "CmdSearch",
-	"version": "1.0.04",
+	"version": "1.0.05",
 	"minAppVersion": "0.15.0",
 	"description": "Use the command pallete to search web. Add your own URLs.",
 	"author": "SpaceshipCaptain",
