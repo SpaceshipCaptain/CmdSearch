@@ -48,22 +48,32 @@ export default class CmdSearch extends Plugin {
             this.addCommand({
                 id: Id,
                 name: `${link.name}`,
-                callback: () => {
-                    let selectedText = this.getSelectedText();
-                    if (link.url.includes("${Q}")) {
-                        if(this.settings.searchSelectedText && selectedText){
-                            this.openLink(link.url, selectedText);
-                        } else {
-                        new QueryPrompt(this.app, this, link.url, link.name).open();
-                        }
-                    } else {
-                        this.openLink(link.url, "");
-                    }
-                },
+                callback: () => {this.handleCommandCallback(link)},
             });
             // Add the new ID to the list for unregistering
             this.registeredIds.push(Id); 
         });
+
+        this.addCommand({
+            id: "palette",
+            name: "Open CmdSearch palette",
+            callback: () => {
+                new CmdSearchPalette(this.app, this).open();
+            }
+        });
+    }
+
+    handleCommandCallback(link: SearchOption) {
+        let selectedText = this.getSelectedText();
+        if (link.url.includes("${Q}")) {
+            if(this.settings.searchSelectedText && selectedText){
+                this.openLink(link.url, selectedText);
+            } else {
+            new QueryPrompt(this.app, this, link.url, link.name).open();
+            }
+        } else {
+            this.openLink(link.url, "");
+        }
     }
 
 	async saveSettings() {
@@ -137,6 +147,30 @@ class QueryPrompt extends FuzzySuggestModal<string> {
     onChooseItem(): void {
         const currentQuery = this.inputEl.value.trim();
         this.plugin.openLink(this.baseUrl, currentQuery);
+    }
+}
+
+class CmdSearchPalette extends FuzzySuggestModal<any> {
+    plugin: CmdSearch;
+    cmdSearchCommands: SearchOption[];
+
+    constructor(app: App, plugin: CmdSearch) {
+        super(app);
+        this.plugin = plugin;
+        this.setPlaceholder("Search CmdSearch Links...");
+        this.cmdSearchCommands = this.plugin.settings.links
+    }
+
+    getItems(): any[] {
+        return this.cmdSearchCommands;
+    }
+
+    getItemText(item: SearchOption): string {
+        return item.name;
+    }
+
+    onChooseItem(item: any): void {
+        this.plugin.handleCommandCallback(item);
     }
 }
 
