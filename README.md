@@ -5,8 +5,10 @@ Quickly search the web from within [ObsidianMD](https://obsidian.md/) using cust
 - Remove or modify the default commands to your liking.
 - Assign hotkeys to your CmdSearch commands for even faster access
 
+[CLICK HERE TO SEE DEMO](https://github.com/user-attachments/assets/5ac72f83-9f02-4b87-b022-b04b90f7c839)
+
 ## Usage
-<video src="https://github.com/user-attachments/assets/7566d39c-cf55-474e-97f9-b4995e9d29b8" height="720"></video>
+[Here is a list of common/useful search URLs to reference](https://github.com/SpaceshipCaptain/CmdSearch/blob/main/List%20of%20URLS.md)
 1.  **Open the command palette:** Press `Ctrl+P` to open Obsidian's command palette.
 2.  **Find your CmdSearch commands:** Type "CmdSearch" to see a list of all your configured commands, or start typing the specific name (e.g., "Google," "YouTube") to quickly find its command.
 3.  **Enter a query:** Once you select a CmdSearch command from the list, you will be prompted to enter your search query (if the command uses the `${Q}` placeholder).

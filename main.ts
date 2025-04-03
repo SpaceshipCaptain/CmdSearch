@@ -17,16 +17,17 @@ export default class CmdSearch extends Plugin {
         const defaultSettings: CmdSearchSettings = {
             links: DEFAULT_OPTIONS,
             openSplitView: false,
-            searchSelectedText: false
+            searchSelectedText: false,
+            historyOption: false
         };
     
         this.settings = Object.assign({}, defaultSettings, await this.loadData());
-    
+
         if (!this.settings.links) {
             this.settings.links = defaultSettings.links;
         }
     }
-    // Keep track of registered command IDs
+
     private registeredIds: string[] = []; 
 
     registerCommands() {
@@ -37,18 +38,18 @@ export default class CmdSearch extends Plugin {
         this.registeredIds = []; // Clear the list
     
         // Register new commands:
-        this.settings.links.forEach((link, index) => {
-            if (!this.validateUrl(link.url)) {
-                if (link.name.trim()) { // Only show error if name is not empty
-                    this.showError(`"${link.name}" has an invalid URL format and did not register.`);
+        this.settings.links.forEach((option, index) => {
+            if (!this.validateUrl(option.url)) {
+                if (option.name.trim()) { // Only show error if name is not empty
+                    this.showError(`"${option.name}" has an invalid URL format and did not register.`);
                 }
                 return;
             }
             const Id = `${index}`;
             this.addCommand({
                 id: Id,
-                name: `${link.name}`,
-                callback: () => {this.handleCommandCallback(link)},
+                name: `${option.name}`,
+                callback: () => {this.handleCommandCallback(option)},
             });
             // Add the new ID to the list for unregistering
             this.registeredIds.push(Id); 
@@ -68,8 +69,9 @@ export default class CmdSearch extends Plugin {
         if (link.url.includes("${Q}")) {
             if(this.settings.searchSelectedText && selectedText){
                 this.openLink(link.url, selectedText);
+                this.recordHistory(link, selectedText);
             } else {
-            new QueryPrompt(this.app, this, link.url, link.name).open();
+            new QueryPrompt(this.app, this, link).open();
             }
         } else {
             this.openLink(link.url, "");
@@ -119,34 +121,60 @@ export default class CmdSearch extends Plugin {
             return "";
         }
     }
+
+    recordHistory(option: SearchOption, query: string) {
+        if(!this.settings.historyOption) return;
+
+        let currentHistory = option.history || [];
+        const queryIndex = currentHistory.indexOf(query);
+        if (queryIndex !== -1) {
+            currentHistory.splice(queryIndex, 1);
+        }
+        const newHistory = [query, ...currentHistory];
+        option.history = newHistory.slice(0, 7);
+        this.saveSettings();
+    }
 }
 
 // used fuzzy to keep the command palette feel while searching
 class QueryPrompt extends FuzzySuggestModal<string> {
-    baseUrl: string;
     plugin: CmdSearch;
-    name: string;
+    selected: SearchOption;
 
-    constructor(app: App, plugin: CmdSearch, baseUrl: string, name: string) {
+    constructor(app: App, plugin: CmdSearch, selectedOption: SearchOption) {
         super(app);
         this.plugin = plugin;
-        this.baseUrl = baseUrl;
-        this.name = name
+        this.selected = selectedOption;
         this.setPlaceholder("Enter search query...");
     }
 // Doens't matter what returns here, just needs to be one item for looks
-    getItems(): string[] {
-        return [""]; 
+    getItems(): any[] {
+        const  history: string[] = this.selected.history ? this.selected.history : [];
+        return [...[""], ...history]; 
     }
 // this is the feedback text displayed on the item returned above
-    getItemText(): string {
+    getItemText(item: string): string {
         const currentQuery = this.inputEl.value;
-        return `Searching ${this.name} for ${currentQuery}`;
+        if(!item){
+            return `Searching ${this.selected.name} for ${currentQuery}`;
+        } else if(this.inputEl.value === "") {
+            return item;
+        } else {
+            return "";
+        }
     }
 
-    onChooseItem(): void {
-        const currentQuery = this.inputEl.value.trim();
-        this.plugin.openLink(this.baseUrl, currentQuery);
+    onChooseItem(item: string): void {
+        if(!item){ //if it's a query it will be an empty string
+            const currentQuery = this.inputEl.value.trim();
+            this.plugin.openLink(this.selected.url, currentQuery);
+            if(currentQuery) {
+                this.plugin.recordHistory(this.selected, currentQuery);
+            }
+        } else { //else it's a history selection
+            this.plugin.openLink(this.selected.url, item)
+            this.plugin.recordHistory(this.selected, item)
+        }
     }
 }
 
@@ -162,7 +190,7 @@ class CmdSearchPalette extends FuzzySuggestModal<any> {
     }
 
     getItems(): any[] {
-        return this.cmdSearchCommands;
+        return [...this.cmdSearchCommands, {name:"CmdSearch: Clear History", type: "cmd"}];
     }
 
     getItemText(item: SearchOption): string {
@@ -170,19 +198,31 @@ class CmdSearchPalette extends FuzzySuggestModal<any> {
     }
 
     onChooseItem(item: any): void {
-        this.plugin.handleCommandCallback(item);
+        if(item.url){
+            this.plugin.handleCommandCallback(item);
+        }
+        if(item.type === "cmd"){ //clears history. probably will move this out later
+            this.plugin.settings.links.forEach(link => {
+                link.history = [];
+            });
+            this.plugin.saveSettings();
+            new Notice("CmdSearch: History Cleared", 4000)
+        }
+        
     }
 }
 
 interface SearchOption {
     name: string;
     url: string;
+    history?: string[];
 }
 
 interface CmdSearchSettings {
     links: SearchOption[];
     openSplitView: boolean;
     searchSelectedText: boolean;
+    historyOption: boolean;
 }
 
 const DEFAULT_OPTIONS: SearchOption[] = [
@@ -219,6 +259,7 @@ class CmdSearchSettingTab extends PluginSettingTab {
         this.createCommandInformationSetting(containerEl);
         this.openSplitViewSetting(containerEl);
         this.searchSelectedText(containerEl);
+        this.historySetting(containerEl);
         this.createSettingsFooter(containerEl);
     
         containerEl.scrollTop = scrollPosition;
@@ -291,13 +332,16 @@ class CmdSearchSettingTab extends PluginSettingTab {
     private createCommandInformationSetting(containerEl: HTMLElement): void {
         const desc = document.createDocumentFragment();
         desc.append(
-            "The Name you set is what appears in the command palette. ",
+            "The name you set is what appears in the command palette. ",
             desc.createEl("br"),
             "For URLs:",
             desc.createEl("br"),
             "- Use ${Q} as a placeholder for your search query.",
             desc.createEl("br"),
-            "- Don't include ${Q} if you want the URL to open without a prompt. (some sites don't support search urls)"
+            "- Don't include ${Q} if you want the URL to open without a prompt. (some sites don't support search urls)",
+            desc.createEl("br"),
+            desc.createEl("br"),
+            "Bind 'Open CmdSearch Palette' to a hotkey for instant access to your CmdSearch links"
         );
 
         new Setting(containerEl)
@@ -334,11 +378,25 @@ class CmdSearchSettingTab extends PluginSettingTab {
     private searchSelectedText(containerEl: HTMLElement): void {
         new Setting(containerEl)
             .setName("Search selected text")
-            .setDesc("If you have text selected when executing a search command, it will use selection as the search query.")
+            .setDesc("If you have text selected when executing a search command, it will use that selection as the search query.")
             .addToggle(toggle => {
                 toggle.setValue(this.plugin.settings.searchSelectedText);
                 toggle.onChange(async (value) => {
                     this.plugin.settings.searchSelectedText = value;
+                    await this.plugin.saveSettings();
+                });
+                return toggle;
+            });
+    }
+
+    private historySetting(containerEl: HTMLElement): void {
+        new Setting(containerEl)
+            .setName("History")
+            .setDesc("Shows up to seven of your most recent queries for that command. Clear History is in the CmdSearch palette.")
+            .addToggle(toggle => {
+                toggle.setValue(this.plugin.settings.historyOption);
+                toggle.onChange(async (value) => {
+                    this.plugin.settings.historyOption = value;
                     await this.plugin.saveSettings();
                 });
                 return toggle;
