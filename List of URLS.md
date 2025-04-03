@@ -62,10 +62,9 @@ https://www.imdb.com/find/?q=${Q}
 
 # Code
 - Github
+```
 https://github.com/search?q=${Q}
-
-
-
+```
 
 # shopping
 - Amazon
