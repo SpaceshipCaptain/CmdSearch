@@ -1,6 +1,6 @@
 {
 	"name": "cmd-search",
-	"version": "1.0.06",
+	"version": "1.0.08",
 	"description": "Use the command pallete to search web. Add your own URLs.",
 	"main": "main.js",
 	"scripts": {

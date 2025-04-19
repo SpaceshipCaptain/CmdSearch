@@ -66,7 +66,7 @@ export default class CmdSearch extends Plugin {
 
     handleCommandCallback(link: SearchOption) {
         let selectedText = this.getSelectedText();
-        if (link.url.includes("${Q}")) {
+        if (link.url.includes("%s") || link.url.includes("${Q}")) {
             if(this.settings.searchSelectedText && selectedText){
                 this.openLink(link.url, selectedText);
                 this.recordHistory(link, selectedText);
@@ -84,7 +84,7 @@ export default class CmdSearch extends Plugin {
 
     private validateUrl(url: string): boolean {
         try {
-            const testUrl = url.replace("${Q}", "test");
+            const testUrl = url.replace("%s", "test");
             new URL(testUrl);
             return true;
         } catch {
@@ -96,9 +96,11 @@ export default class CmdSearch extends Plugin {
 
     openLink(url: string, query: string) {
         try {
-            const finalUrl = url.includes("${Q}")
-                ? url.replace("${Q}", encodeURIComponent(query))
-                : url;
+            const finalUrl = url.includes("%s")
+                ? url.replace("%s", encodeURIComponent(query))
+                : url.includes("${Q}")
+                    ? url.replace("${Q}", encodeURIComponent(query))
+                    : url;
             if (this.settings.openSplitView) {
                 if(!this.splitLeaf || this.splitLeaf?.getViewState().type === "empty") {
                     this.splitLeaf = this.app.workspace.getLeaf('split', 'vertical')
@@ -226,12 +228,12 @@ interface CmdSearchSettings {
 }
 
 const DEFAULT_OPTIONS: SearchOption[] = [
-    { name: "Google", url: "https://www.google.com/search?q=${Q}" },
-    { name: "YouTube", url: "https://www.youtube.com/results?search_query=${Q}" },
-    { name: "GoogleImages", url: "https://www.google.com/search?tbm=isch&q=${Q}" },
-    { name: "Wikipedia", url: "https://en.wikipedia.org/wiki/${Q}" },
-    { name: "OpenStreetMap", url: "https://www.openstreetmap.org/search?query=${Q}" },
-    { name: "DuckDuckGo", url: "https://duckduckgo.com/?q=${Q}" }
+    { name: "Google", url: "https://www.google.com/search?q=%s" },
+    { name: "YouTube", url: "https://www.youtube.com/results?search_query=%s" },
+    { name: "GoogleImages", url: "https://www.google.com/search?tbm=isch&q=%s" },
+    { name: "Wikipedia", url: "https://en.wikipedia.org/wiki/%s" },
+    { name: "OpenStreetMap", url: "https://www.openstreetmap.org/search?query=%s" },
+    { name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" }
 ];
 
 class CmdSearchSettingTab extends PluginSettingTab {
@@ -336,9 +338,11 @@ class CmdSearchSettingTab extends PluginSettingTab {
             desc.createEl("br"),
             "For URLs:",
             desc.createEl("br"),
-            "- Use ${Q} as a placeholder for your search query.",
+            "- Use %s as a placeholder for your search query.",
             desc.createEl("br"),
-            "- Don't include ${Q} if you want the URL to open without a prompt. (some sites don't support search urls)",
+            "- Don't include %s if you want the URL to open without a prompt. (some sites don't support search urls)",
+            desc.createEl("br"),
+            "- To better align with web standards, the default option has been changed to %s. ${Q} is still a valid alternative.",
             desc.createEl("br"),
             desc.createEl("br"),
             "Bind 'Open CmdSearch Palette' to a hotkey for instant access to your CmdSearch links"
@@ -348,10 +352,10 @@ class CmdSearchSettingTab extends PluginSettingTab {
             .setName("Command information")
             .setDesc(desc)
             .addButton(btn => {
-                const originalButtonText = "Copy ${Q}";
+                const originalButtonText = "Copy %s";
                 btn.setButtonText(originalButtonText)
                     .onClick(async () => {
-                        await navigator.clipboard.writeText("${Q}");
+                        await navigator.clipboard.writeText("%s");
                         btn.setButtonText("Copied!");
                         setTimeout(() => {
                             btn.setButtonText(originalButtonText);
