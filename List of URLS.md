@@ -12,9 +12,13 @@ https://www.bing.com/search?q=%s
 ```
 https://www.reddit.com/search/?q=%s
 ```
-- search google with only reddit results
+- Search google with only reddit results
 ```
 https://www.google.com/search?q=%s+site%3Areddit.com
+```
+- Google web search (Only returns links and wont display AI summaries and such)
+```
+https://www.google.com/search?udm=14&q=%s
 ```
 
 # LLMs/AI Chats
@@ -30,9 +34,15 @@ https://claude.ai/new/?q=%s
 ```
 https://www.perplexity.ai/?q=%s
 ```
-- Google Gemeni 2.0 Flash (through t3.chat)
+- Google Gemeni 2.5 Flash (through t3.chat)
 ```
-https://t3.chat/new?model=gemini-2.0-flash&q=%s
+https://t3.chat/new?model=gemini-2.5-flash&q=%s
+```
+
+# Academic Resources
+- Arxiv
+```
+https://arxiv.org/search/?query=%s&searchtype=all
 ```
 
 # Books
@@ -44,7 +54,6 @@ https://www.goodreads.com/search?&query=%s
 ```
 https://www.amazon.com/s?k=%s
 ```
-
 
 # Movies
 - Letterboxd
@@ -100,4 +109,8 @@ https://www.artstation.com/search?&query=%s
 - Google Maps
 ```
 https://maps.google.com/?q=%s
+```
+- Unsplash (Free high-res photos)
+```
+https://unsplash.com/s/photos/%s?license=free
 ```
